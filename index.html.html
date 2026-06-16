@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Goal Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: #e0dbd2;
+    --accent: #2d6a2d;
+    --accent-light: #e8f3e8;
+    --text: #1a1a1a;
+    --muted: #888;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .app { max-width: 680px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  h1 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+  .header { margin-bottom: 24px; }
+  .week-nav { display: flex; align-items: center; justify-content: space-between; }
+  .week-label { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'DM Mono', monospace; transition: all 0.15s; }
+  .nav-btn:hover { color: var(--text); border-color: #bbb; }
+
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .summary-row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 28px; max-width: calc(66.66% + 5px); }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .summary-label { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .summary-value { font-family: 'DM Serif Display', serif; font-size: 28px; line-height: 1; color: var(--text); }
+  .summary-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+  .progress-fill.complete { background: var(--accent); }
+
+  .section-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+
+  .goal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 10px; }
+  .goal-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .goal-name { font-size: 15px; font-weight: 500; }
+  .goal-progress { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  .goal-progress.complete { color: var(--accent); font-weight: 500; }
+
+  .log-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .log-label { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 50px; }
+  .log-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 14px; font-family: 'DM Mono', monospace; text-align: center; transition: border-color 0.15s; outline: none; }
+  .log-input:focus { border-color: var(--accent); }
+  .log-input::placeholder { color: #ccc; }
+  .add-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: opacity 0.15s; white-space: nowrap; }
+  .add-btn:hover { opacity: 0.85; }
+
+  .day-toggles { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .day-toggle { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; cursor: pointer; transition: all 0.15s; }
+  .day-toggle:hover { border-color: #bbb; color: var(--text); }
+  .day-toggle.logged { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+
+  .copy-section { margin-top: 28px; border-top: 1px solid var(--border); padding-top: 20px; }
+  .copy-btn { width: 100%; padding: 13px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); font-size: 13px; font-family: 'DM Mono', monospace; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .reset-row { text-align: center; margin-top: 12px; }
+  .reset-btn { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; text-decoration: underline; }
+  .reset-btn:hover { color: #555; }
+
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 10px 22px; border-radius: 8px; font-size: 13px; font-family: 'DM Mono', monospace; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 480px) {
+    .summary { grid-template-columns: 1fr; }
+    .summary-row2 { grid-template-columns: 1fr; max-width: 100%; }
+    .summary-value { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <h1>Weekly Tracker</h1>
+  <p class="subtitle">Weekly goals</p>
+
+  <div class="header">
+    <div class="week-nav">
+      <div class="week-label" id="weekLabel"></div>
+      <div class="nav-btns">
+        <button class="nav-btn" onclick="changeWeek(-1)">← prev</button>
+        <button class="nav-btn" onclick="changeWeek(1)">next →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Summary</div>
+  <div class="summary">
+    <div class="summary-card">
+      <div class="summary-label">AI Training</div>
+      <div class="summary-value" id="sumAIVal">0.0h</div>
+      <div class="summary-sub" id="sumAISub">4.0h left</div>
+      <div class="progress-bar"><div class="progress-fill" id="sumAIBar" style="width:0%"></div></div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Health Coach</div>
+      <div class="summary-value" id="sumHCVal">0.0h</div>
+      <div class="summary-sub" id="sumHCSub">2.0h left</div>
+      <div class="progress-bar"><div class="progress-fill" id="sumHCBar" style="width:0%"></div></div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Career Exploration</div>
+      <div class="summary-value" id="sumCareerVal">0/2</div>
+      <div class="summary-sub">sessions</div>
+      <div class="progress-bar"><div class="progress-fill" id="sumCareerBar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="summary-row2">
+    <div class="summary-card">
+      <div class="summary-label">Stretch & Strength</div>
+      <div class="summary-value" id="sumStretchVal">0/5</div>
+      <div class="summary-sub">sessions</div>
+      <div class="progress-bar"><div class="progress-fill" id="sumStretchBar" style="width:0%"></div></div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Cardio Health</div>
+      <div class="summary-value" id="sumCardioVal">0/4</div>
+      <div class="summary-sub">sessions</div>
+      <div class="progress-bar"><div class="progress-fill" id="sumCardioBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Goals</div>
+
+  <!-- 1. AI Training -->
+  <div class="goal-card">
+    <div class="goal-header">
+      <div class="goal-name">AI Training</div>
+      <div class="goal-progress" id="aiProgress">0.0h / 4h</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="aiBar" style="width:0%"></div></div>
+    <div class="log-row">
+      <div class="log-label">Log min:</div>
+      <input class="log-input" type="number" id="aiInput" placeholder="min" min="0">
+      <button class="add-btn" onclick="logMinutes('ai')">+ add</button>
+    </div>
+  </div>
+
+  <!-- 2. Health Coach Training -->
+  <div class="goal-card">
+    <div class="goal-header">
+      <div class="goal-name">Health Coach Training</div>
+      <div class="goal-progress" id="hcProgress">0.0h / 2h</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="hcBar" style="width:0%"></div></div>
+    <div class="log-row">
+      <div class="log-label">Log min:</div>
+      <input class="log-input" type="number" id="hcInput" placeholder="min" min="0">
+      <button class="add-btn" onclick="logMinutes('hc')">+ add</button>
+    </div>
+  </div>
+
+  <!-- 3. Career Exploration -->
+  <div class="goal-card">
+    <div class="goal-header">
+      <div class="goal-name">Career Exploration</div>
+      <div class="goal-progress" id="careerProgress">0 / 2 sessions</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="careerBar" style="width:0%"></div></div>
+    <div class="day-toggles" id="careerToggles"></div>
+  </div>
+
+  <!-- 4. Stretch & Strength -->
+  <div class="goal-card">
+    <div class="goal-header">
+      <div class="goal-name">Stretch & Strength</div>
+      <div class="goal-progress" id="stretchProgress">0 / 5 sessions</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="stretchBar" style="width:0%"></div></div>
+    <div class="day-toggles" id="stretchToggles"></div>
+  </div>
+
+  <!-- 5. Cardio Health -->
+  <div class="goal-card">
+    <div class="goal-header">
+      <div class="goal-name">Cardio Health</div>
+      <div class="goal-progress" id="cardioProgress">0 / 4 sessions</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="cardioBar" style="width:0%"></div></div>
+    <div class="day-toggles" id="cardioToggles"></div>
+  </div>
+
+  <div class="copy-section">
+    <button class="copy-btn" id="copyBtn" onclick="copyStatus()">
+      <span>Copy status to paste into planning chat ↗</span>
+    </button>
+  </div>
+  <div class="reset-row">
+    <button class="reset-btn" onclick="resetWeek()">reset this week's data</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const CAREER_DAYS  = ['Mon','Tue','Wed','Thu','Fri'];
+  const STRETCH_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const CARDIO_DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  let weekOffset = 0;
+  let data = {};
+
+  function getWeekKey(offset) {
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    return monday.toISOString().slice(0, 10);
+  }
+
+  function getWeekDates(offset) {
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${fmt(monday)} – ${fmt(sunday)}${offset === 0 ? ' · this week' : ''}`;
+  }
+
+  function getDefaultData() {
+    return { aiMin: 0, hcMin: 0, careerDays: [], stretchDays: [], cardioDays: [] };
+  }
+
+  function getCurrentData() {
+    const key = getWeekKey(weekOffset);
+    if (!data[key]) data[key] = getDefaultData();
+    // migrate old data keys if needed
+    const d = data[key];
+    if (!d.hcMin) d.hcMin = 0;
+    if (!d.careerDays) d.careerDays = [];
+    if (!d.stretchDays) d.stretchDays = [];
+    if (!d.cardioDays) d.cardioDays = [];
+    return d;
+  }
+
+  function loadData() {
+    try {
+      const saved = localStorage.getItem('weekly-tracker-v2');
+      if (saved) data = JSON.parse(saved);
+    } catch(e) { data = {}; }
+    render();
+  }
+
+  function saveData() {
+    try { localStorage.setItem('weekly-tracker-v2', JSON.stringify(data)); } catch(e) {}
+  }
+
+  function logMinutes(type) {
+    const d = getCurrentData();
+    const inputId = type === 'ai' ? 'aiInput' : 'hcInput';
+    const val = parseInt(document.getElementById(inputId).value);
+    if (!val || val <= 0) return;
+    if (type === 'ai') d.aiMin += val;
+    else d.hcMin += val;
+    document.getElementById(inputId).value = '';
+    saveData(); render(); showToast('Logged!');
+  }
+
+  function toggleDay(type, day) {
+    const d = getCurrentData();
+    const arr = type === 'career' ? d.careerDays : type === 'stretch' ? d.stretchDays : d.cardioDays;
+    const idx = arr.indexOf(day);
+    if (idx >= 0) arr.splice(idx, 1); else arr.push(day);
+    saveData(); render();
+  }
+
+  function changeWeek(dir) { weekOffset += dir; render(); }
+
+  function resetWeek() {
+    if (!confirm('Reset all data for this week?')) return;
+    data[getWeekKey(weekOffset)] = getDefaultData();
+    saveData(); render(); showToast('Week reset');
+  }
+
+  function copyStatus() {
+    const d = getCurrentData();
+    const aiH = (d.aiMin / 60).toFixed(1);
+    const aiLeft = Math.max(0, (240 - d.aiMin) / 60).toFixed(1);
+    const hcH = (d.hcMin / 60).toFixed(1);
+    const hcLeft = Math.max(0, (120 - d.hcMin) / 60).toFixed(1);
+    const week = getWeekDates(weekOffset).replace(' · this week','');
+    const text = [
+      `Weekly progress (${week}):`,
+      `- AI Training: ${aiH}h logged, ${aiLeft}h remaining`,
+      `- Health Coach Training: ${hcH}h logged, ${hcLeft}h remaining`,
+      `- Career Exploration: ${d.careerDays.length}/2 sessions`,
+      `- Stretch & Strength: ${d.stretchDays.length}/5 sessions`,
+      `- Cardio Health: ${d.cardioDays.length}/4 sessions`
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.querySelector('span').textContent = '✓ Copied to clipboard';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.querySelector('span').textContent = 'Copy status to paste into planning chat ↗';
+      }, 2000);
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function render() {
+    const d = getCurrentData();
+    const aiH = d.aiMin / 60;
+    const hcH = d.hcMin / 60;
+
+    document.getElementById('weekLabel').textContent = getWeekDates(weekOffset);
+
+    // Summary row 1
+    document.getElementById('sumAIVal').textContent = aiH.toFixed(1) + 'h';
+    document.getElementById('sumAISub').textContent = Math.max(0, 4 - aiH).toFixed(1) + 'h left';
+    document.getElementById('sumAIBar').style.width = Math.min(100, aiH / 4 * 100) + '%';
+
+    document.getElementById('sumHCVal').textContent = hcH.toFixed(1) + 'h';
+    document.getElementById('sumHCSub').textContent = Math.max(0, 2 - hcH).toFixed(1) + 'h left';
+    document.getElementById('sumHCBar').style.width = Math.min(100, hcH / 2 * 100) + '%';
+
+    document.getElementById('sumCareerVal').textContent = d.careerDays.length + '/2';
+    document.getElementById('sumCareerBar').style.width = (d.careerDays.length / 2 * 100) + '%';
+
+    // Summary row 2
+    document.getElementById('sumStretchVal').textContent = d.stretchDays.length + '/5';
+    document.getElementById('sumStretchBar').style.width = (d.stretchDays.length / 5 * 100) + '%';
+
+    document.getElementById('sumCardioVal').textContent = d.cardioDays.length + '/4';
+    document.getElementById('sumCardioBar').style.width = (d.cardioDays.length / 4 * 100) + '%';
+
+    // Goal cards
+    document.getElementById('aiProgress').textContent = aiH.toFixed(1) + 'h / 4h';
+    document.getElementById('aiProgress').className = 'goal-progress' + (aiH >= 4 ? ' complete' : '');
+    document.getElementById('aiBar').style.width = Math.min(100, aiH / 4 * 100) + '%';
+
+    document.getElementById('hcProgress').textContent = hcH.toFixed(1) + 'h / 2h';
+    document.getElementById('hcProgress').className = 'goal-progress' + (hcH >= 2 ? ' complete' : '');
+    document.getElementById('hcBar').style.width = Math.min(100, hcH / 2 * 100) + '%';
+
+    // Career Exploration toggles
+    const ct = document.getElementById('careerToggles');
+    ct.innerHTML = '';
+    CAREER_DAYS.forEach(day => {
+      const btn = document.createElement('button');
+      btn.className = 'day-toggle' + (d.careerDays.includes(day) ? ' logged' : '');
+      btn.textContent = day;
+      btn.onclick = () => toggleDay('career', day);
+      ct.appendChild(btn);
+    });
+    document.getElementById('careerProgress').textContent = d.careerDays.length + ' / 2 sessions';
+    document.getElementById('careerProgress').className = 'goal-progress' + (d.careerDays.length >= 2 ? ' complete' : '');
+    document.getElementById('careerBar').style.width = (d.careerDays.length / 2 * 100) + '%';
+
+    // Stretch & Strength toggles
+    const st = document.getElementById('stretchToggles');
+    st.innerHTML = '';
+    STRETCH_DAYS.forEach(day => {
+      const btn = document.createElement('button');
+      btn.className = 'day-toggle' + (d.stretchDays.includes(day) ? ' logged' : '');
+      btn.textContent = day;
+      btn.onclick = () => toggleDay('stretch', day);
+      st.appendChild(btn);
+    });
+    document.getElementById('stretchProgress').textContent = d.stretchDays.length + ' / 5 sessions';
+    document.getElementById('stretchProgress').className = 'goal-progress' + (d.stretchDays.length >= 5 ? ' complete' : '');
+    document.getElementById('stretchBar').style.width = (d.stretchDays.length / 5 * 100) + '%';
+
+    // Cardio Health toggles
+    const cdt = document.getElementById('cardioToggles');
+    cdt.innerHTML = '';
+    CARDIO_DAYS.forEach(day => {
+      const btn = document.createElement('button');
+      btn.className = 'day-toggle' + (d.cardioDays.includes(day) ? ' logged' : '');
+      btn.textContent = day;
+      btn.onclick = () => toggleDay('cardio', day);
+      cdt.appendChild(btn);
+    });
+    document.getElementById('cardioProgress').textContent = d.cardioDays.length + ' / 4 sessions';
+    document.getElementById('cardioProgress').className = 'goal-progress' + (d.cardioDays.length >= 4 ? ' complete' : '');
+    document.getElementById('cardioBar').style.width = (d.cardioDays.length / 4 * 100) + '%';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.activeElement.id === 'aiInput') logMinutes('ai');
+      if (document.activeElement.id === 'hcInput') logMinutes('hc');
+    }
+  });
+
+  loadData();
+</script>
+</body>
+</html>
